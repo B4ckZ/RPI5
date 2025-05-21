@@ -20,7 +20,7 @@ class MaxLinkApp:
     def __init__(self, root):
         self.root = root
         self.root.title("MaxLink Config")
-        self.root.geometry("1000x600")
+        self.root.geometry("1100x550")
         self.root.configure(bg=COLORS["nord0"])
         
         # Chemins et initialisation
@@ -169,42 +169,34 @@ class MaxLinkApp:
         
         # Déterminer le chemin du script
         if action == "install":
-            script_path = f"install/{service_id}.sh"
+            script_path = f"scripts/{service_id}_install.sh"
         elif action == "remove":
-            script_path = f"remove/{service_id}.sh"
+            script_path = f"scripts/{service_id}_remove.sh"
         else:
             script_path = f"scripts/{service_id}_{action}.sh"
         
-        full_path = os.path.join(self.base_path, script_path)
-        
-        # Vérifier si le script existe
-        if not os.path.exists(full_path):
-            self.update_console(f"Erreur: Script {script_path} non trouvé")
-            return
-        
         # Afficher l'action dans la console
-        self.update_console(f"\n{'='*50}\nExécution: {service['name']} - {action.upper()}\nScript: {full_path}\n{'='*50}\n")
+        self.update_console(f"\n{'='*50}\nExécution: {service['name']} - {action.upper()}\n{'='*50}\n")
         
         # Exécuter le script en arrière-plan
-        threading.Thread(target=self.execute_script, args=(full_path, service, action), daemon=True).start()
+        threading.Thread(target=self.execute_script, args=(script_path, service, action), daemon=True).start()
     
     def execute_script(self, script_path, service, action):
         try:
-            # Simulation - À remplacer par l'exécution réelle
-            cmd = f"echo 'Simulation d'exécution du script {script_path}'\n"
-            cmd += "echo 'Installation en cours...'\n"
-            cmd += "sleep 1\n"
-            cmd += "echo 'Étape 1: Configuration...'\n"
-            cmd += "sleep 1\n"
-            cmd += "echo 'Étape 2: Téléchargement des paquets...'\n"
-            cmd += "sleep 1\n"
-            cmd += "echo 'Étape 3: Installation terminée!'\n"
+            # Construire le chemin complet du script relatif à l'emplacement de la clé USB
+            full_script_path = os.path.join(self.base_path, script_path)
             
-            # Pour une version réelle, utilisez ceci :
-            # process = subprocess.Popen(["sudo", "bash", script_path], ...)
+            # Vérifier si le script existe
+            if not os.path.exists(full_script_path):
+                self.update_console(f"Erreur: Script {script_path} non trouvé\n")
+                return
+                
+            # Exécuter le script (déjà avec sudo car le programme est lancé avec sudo)
+            cmd = f"bash {full_script_path}"
             
             process = subprocess.Popen(
-                ["bash", "-c", cmd], 
+                cmd,
+                shell=True,
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, 
                 text=True, 
