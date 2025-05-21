@@ -15,50 +15,59 @@ mkdir -p "$LOG_DIR"
 touch "$LOG_FILE"
 chmod 644 "$LOG_FILE"
 
-# Fonction pour logger les messages (mode ultra simple)
+# Fonction pour logger les messages (optimisée)
 log_message() {
     local message="$1"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local display=${2:-true}  # Paramètre optionnel pour contrôler l'affichage
     
-    # Écrire dans le fichier de log avec timestamp
+    # Toujours écrire dans le fichier de log
     echo "[$timestamp] $message" >> "$LOG_FILE"
     
-    # Afficher sur la console sans aucune séquence d'échappement
-    printf "%s\n" "$message"
+    # Afficher sur la console uniquement si demandé
+    if [ "$display" = true ]; then
+        printf "%s\n" "$message"
+        # Petit délai pour une meilleure lisibilité
+        sleep 0.2
+    fi
     
-    # Envoyer au journal système
-    logger -t "update_rpi" "$message"
+    # Logger uniquement les messages importants
+    if [[ "$message" == *"DÉMARRAGE"* ]] || [[ "$message" == *"ERREUR"* ]] || [[ "$message" == *"TERMINÉ"* ]] || [[ "$message" == *"REDÉMARRAGE"* ]]; then
+        logger -t "update_rpi" "$message"
+    fi
 }
 
-# Vider le fichier de log précédent
-echo "" > "$LOG_FILE"
+# Fonction pour les transitions entre les étapes principales
+next_section() {
+    local title="$1"
+    echo ""
+    log_message "$title"
+    sleep 1  # Délai plus long entre les sections principales
+}
 
-log_message "=== DÉMARRAGE DE LA MISE À JOUR DU RASPBERRY PI ==="
+# Réinitialiser le fichier de log
+echo "--- Nouvelle session: $(date) ---" > "$LOG_FILE"
 
-# Nouvelle étape: Configuration du ventilateur du Raspberry Pi
-log_message "> Configuration de refroidissement"
+next_section "DÉMARRAGE DE LA MISE À JOUR DU RASPBERRY PI"
 
-# Chemin du fichier de configuration
+# Configuration du ventilateur
+log_message "Configuration du refroidissement..."
+
 CONFIG_FILE="/boot/firmware/config.txt"
 CONFIG_BACKUP="${CONFIG_FILE}.backup"
 
-# Vérifier si le fichier config.txt existe
+# Vérifier et configurer en journalisant de manière détaillée dans le fichier
 if [ -f "$CONFIG_FILE" ]; then
-    # Créer une sauvegarde du fichier original
     cp "$CONFIG_FILE" "$CONFIG_BACKUP"
     
-    # Vérifier si les paramètres du ventilateur existent déjà
+    # Vérifier et mettre à jour les paramètres du ventilateur (journalisation détaillée dans le fichier uniquement)
     if grep -q "dtparam=fan_temp" "$CONFIG_FILE"; then
-        log_message "  Mise à jour des paramètres de refroidissement..."
-        
-        # Utiliser sed pour remplacer les lignes existantes
+        log_message "Mise à jour des paramètres de refroidissement existants..." false
         sed -i 's/dtparam=fan_temp0=.*/dtparam=fan_temp0=0/g' "$CONFIG_FILE"
         sed -i 's/dtparam=fan_temp1=.*/dtparam=fan_temp1=60/g' "$CONFIG_FILE"
         sed -i 's/dtparam=fan_temp2=.*/dtparam=fan_temp2=60/g' "$CONFIG_FILE"
     else
-        log_message "  Ajout des nouveaux paramètres de refroidissement..."
-        
-        # Ajouter les paramètres à la fin du fichier
+        log_message "Ajout des nouveaux paramètres de refroidissement..." false
         echo "" >> "$CONFIG_FILE"
         echo "# Configuration de refroidissement" >> "$CONFIG_FILE"
         echo "dtparam=fan_temp0=0" >> "$CONFIG_FILE"
@@ -70,145 +79,145 @@ if [ -f "$CONFIG_FILE" ]; then
     if grep -q "dtparam=fan_temp0=0" "$CONFIG_FILE" && \
        grep -q "dtparam=fan_temp1=60" "$CONFIG_FILE" && \
        grep -q "dtparam=fan_temp2=60" "$CONFIG_FILE"; then
-        log_message "  Paramètre de refroidissement réglé sur le mode <Production>"
+        log_message "Refroidissement réglé sur mode <Production>"
     else
-        log_message "  Échec de la configuration de refroidissement"
+        log_message "ERREUR: Configuration du refroidissement échouée"
     fi
 else
-    log_message "  Fichier config.txt introuvable"
+    log_message "ERREUR: Fichier config.txt introuvable"
 fi
 
-# Étape 1: Connexion au WiFi
-log_message "> Connexion au réseau WiFi..."
-nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" > /dev/null 2>&1
+sleep 1
 
-if [ $? -ne 0 ]; then
-    # Vérifier si on est déjà connecté à ce réseau
+# Connexion au WiFi
+next_section "CONNECTIVITÉ RÉSEAU"
+log_message "Connexion au réseau WiFi..."
+
+# Tenter de se connecter
+nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" > /dev/null 2>&1
+wifi_status=$?
+
+# Vérifier l'état de la connexion
+if [ $wifi_status -ne 0 ]; then
     if nmcli -t -f ACTIVE,SSID device wifi | grep "^yes:$WIFI_SSID$" > /dev/null; then
-        log_message "  Déjà connecté au réseau $WIFI_SSID"
+        log_message "Déjà connecté au réseau $WIFI_SSID"
     else
-        # Si on ne peut pas se connecter, on tente de créer une nouvelle connexion
-        log_message "  Tentative de création d'une nouvelle connexion..."
+        log_message "Nouvelle tentative de connexion..."
         nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" name "$WIFI_SSID" > /dev/null 2>&1
         
         if [ $? -ne 0 ]; then
-            log_message "  Impossible de se connecter au réseau. Arrêt."
+            log_message "ERREUR: Impossible de se connecter au réseau WiFi"
             exit 1
         fi
     fi
 else
-    log_message "  Connecté au réseau $WIFI_SSID"
+    log_message "Connecté au réseau $WIFI_SSID"
 fi
 
-# Attente pour stabilisation de la connexion
-log_message "  Attente de stabilisation de la connexion..."
+# Attente pour stabilisation
+log_message "Stabilisation de la connexion (15s)..."
 sleep 15
-log_message "  Connexion stabilisée"
 
-# Étape 2: Vérification de la connectivité Internet
-log_message "> Test & Vérification de la connectivité Internet..."
+# Test de connectivité Internet
+log_message "Test de connectivité Internet..."
 
 if ping -c 4 8.8.8.8 > /dev/null 2>&1; then
-    log_message "  Connectivité Internet OK"
+    log_message "Connectivité Internet OK"
 else
-    log_message "  Connectivité faible, test alternatif..."
+    log_message "Connectivité faible, test alternatif..."
     
     if ping -c 4 google.com > /dev/null 2>&1; then
-        log_message "  Connexion rétablie"
+        log_message "Connexion rétablie"
     else
-        log_message "  Pas de connexion Internet. Arrêt."
+        log_message "ERREUR: Pas de connexion Internet"
         nmcli connection delete "$WIFI_SSID" > /dev/null 2>&1
         exit 1
     fi
 fi
 
-# Étape 3: Vérification de l'horloge système
-log_message "> Vérification de l'horloge système..."
+sleep 1
+
+# Vérification de l'horloge système
+log_message "Vérification de l'horloge système..."
 
 current_date=$(date +%s)
 online_date=$(curl -s --head http://google.com 2>/dev/null | grep -i "^date:" | sed 's/^[Dd]ate: //g' | date -f - +%s 2>/dev/null || echo 0)
 
-# Si la date en ligne est valide (différente de 0)
 if [ "$online_date" != "0" ]; then
-    # Calculer la différence en secondes
     date_diff=$((current_date - online_date))
     date_diff=${date_diff#-} # Valeur absolue
     
     if [ $date_diff -gt 60 ]; then
-        log_message "  Horloge désynchronisée (${date_diff}s)"
-        log_message "  Synchronisation en cours..."
+        log_message "Horloge désynchronisée (${date_diff}s), synchronisation en cours..."
         
-        # Installer ntpdate si nécessaire
+        # Installer ntpdate si nécessaire et synchroniser (log détaillé dans le fichier uniquement)
         if ! command -v ntpdate > /dev/null; then
+            log_message "Installation de ntpdate..." false
             apt-get update > /dev/null 2>&1
             apt-get install -y ntpdate > /dev/null 2>&1
         fi
         
-        # Synchroniser l'horloge
         if ntpdate pool.ntp.org > /dev/null 2>&1; then
-            log_message "  Horloge synchronisée"
+            log_message "Horloge synchronisée"
         else
-            log_message "  Échec de la synchronisation"
+            log_message "ERREUR: Échec de la synchronisation d'horloge"
         fi
     else
-        log_message "  Horloge système OK"
+        log_message "Horloge système OK"
     fi
 else
-    log_message "  Impossible de vérifier l'heure en ligne"
+    log_message "AVERTISSEMENT: Impossible de vérifier l'heure en ligne"
 fi
 
-# Étape 4: Mise à jour du système
-log_message "=== MISE À JOUR DU SYSTÈME ==="
+sleep 1
 
-# Créer des fichiers de log temporaires pour chaque commande
+# Mise à jour du système
+next_section "MISE À JOUR DU SYSTÈME"
+
+# Créer des fichiers de log pour chaque commande
 UPDATE_LOG="$LOG_DIR/apt_update.log"
 UPGRADE_LOG="$LOG_DIR/apt_upgrade.log"
-AUTOREMOVE_LOG="$LOG_DIR/apt_autoremove.log"
-AUTOCLEAN_LOG="$LOG_DIR/apt_autoclean.log"
+CLEAN_LOG="$LOG_DIR/apt_clean.log"
 
-# Exécuter apt update
-log_message "> Mise à jour des dépôts (apt update)..."
+# apt update
+log_message "Mise à jour des dépôts..."
 apt-get update -y >> "$UPDATE_LOG" 2>&1
 update_status=$?
-if [ $update_status -eq 0 ]; then
-    log_message "  Mise à jour des dépôts terminée"
-else
-    log_message "  Échec de la mise à jour des dépôts"
-fi
 
-if [ $update_status -eq 0 ]; then
-    # Exécuter apt upgrade
-    log_message "> Mise à niveau des paquets (apt upgrade)..."
-    log_message "  Cette opération peut prendre plusieurs minutes..."
+if [ $update_status -ne 0 ]; then
+    log_message "ERREUR: Échec de la mise à jour des dépôts"
+else
+    # apt upgrade
+    log_message "Mise à niveau des paquets (peut prendre plusieurs minutes)..."
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y >> "$UPGRADE_LOG" 2>&1
     upgrade_status=$?
     
-    if [ $upgrade_status -eq 0 ]; then
-        log_message "  Mise à niveau des paquets terminée"
-        
-        # Nettoyage du système
-        log_message "> Nettoyage du système..."
-        apt-get autoremove -y >> "$AUTOREMOVE_LOG" 2>&1
-        log_message "  Suppression des paquets obsolètes terminée"
-        
-        apt-get autoclean -y >> "$AUTOCLEAN_LOG" 2>&1
-        log_message "  Nettoyage du cache APT terminé"
+    if [ $upgrade_status -ne 0 ]; then
+        log_message "ERREUR: Échec de la mise à niveau des paquets"
     else
-        log_message "  Échec de la mise à niveau des paquets"
+        log_message "Mise à niveau des paquets terminée"
+        
+        # Nettoyage combiné
+        log_message "Nettoyage du système..."
+        {
+            apt-get autoremove -y
+            apt-get autoclean -y
+        } >> "$CLEAN_LOG" 2>&1
+        log_message "Nettoyage terminé"
     fi
-else
-    log_message "  Mise à niveau annulée à cause d'erreurs précédentes"
 fi
 
-# Étape 6: Déconnexion du WiFi
-log_message "> Déconnexion du réseau WiFi..."
-nmcli connection delete "$WIFI_SSID" > /dev/null 2>&1
-log_message "  Déconnecté du réseau WiFi"
+sleep 1
 
-# Étape 7: Affichage d'un art ASCII
+# Déconnexion du WiFi
+log_message "Déconnexion du réseau WiFi..."
+nmcli connection delete "$WIFI_SSID" > /dev/null 2>&1
+
+# Affichage du statut final et préparation du redémarrage
 if [ $update_status -eq 0 ] && [ $upgrade_status -eq 0 ]; then
-    log_message "=== MISE À JOUR TERMINÉE AVEC SUCCÈS ==="
+    next_section "MISE À JOUR TERMINÉE AVEC SUCCÈS"
     
+    # Art ASCII
     cat << "EOF"
   __  __            _     _       _    
  |  \/  |          | |   (_)     | |   
@@ -217,11 +226,11 @@ if [ $update_status -eq 0 ] && [ $upgrade_status -eq 0 ]; then
  | |  | | (_| |>  <| |___| | | | |   < 
  |_|  |_|\__,_/_/\_\_____|_|_| |_|_|\_\
                                        
- Mise à jour terminée avec succès!
 EOF
 else
-    log_message "=== MISE À JOUR TERMINÉE AVEC DES ERREURS ==="
+    next_section "MISE À JOUR TERMINÉE AVEC DES ERREURS"
     
+    # Art ASCII avec message d'erreur
     cat << "EOF"
   __  __            _     _       _    
  |  \/  |          | |   (_)     | |   
@@ -229,16 +238,15 @@ else
  | |\/| |/ _' \ \/ / |   | | '_ \| |/ /
  | |  | | (_| |>  <| |___| | | | |   < 
  |_|  |_|\__,_/_/\_\_____|_|_| |_|_|\_\
-                                       
- Mise à jour terminée avec des erreurs!
+
  Consultez les logs pour plus de détails.
 EOF
 fi
 
-# Étape 8: Attente avant redémarrage
-log_message "  Le système va redémarrer dans 15 secondes..."
+log_message "Le système va redémarrer dans 15 secondes..."
 sleep 15
 
-# Étape 9: Redémarrage du système
-log_message "=== REDÉMARRAGE DU SYSTÈME ==="
+log_message "REDÉMARRAGE DU SYSTÈME"
+# Ajout d'un délai final pour s'assurer que le message est vu
+sleep 1
 reboot
