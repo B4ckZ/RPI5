@@ -20,7 +20,7 @@ class MaxLinkApp:
     def __init__(self, root):
         self.root = root
         self.root.title("MaxLink Config")
-        self.root.geometry("1100x550")
+        self.root.geometry("1000x550")
         self.root.configure(bg=COLORS["nord0"])
         
         # Chemins et initialisation
