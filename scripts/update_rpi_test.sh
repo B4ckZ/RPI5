@@ -9,6 +9,8 @@ WIFI_SSID="Max"
 WIFI_PASSWORD="1234567890"
 LOG_FILE="$BASE_DIR/logs/update_rpi.log"
 LOG_DIR="$BASE_DIR/logs"
+BG_IMAGE_SOURCE="$BASE_DIR/assets/bg.jpg"  # Changé de .png à .jpg
+BG_IMAGE_DEST="/usr/share/backgrounds/maxlink"
 
 # Créer le répertoire de logs s'il n'existe pas
 mkdir -p "$LOG_DIR"
@@ -55,7 +57,7 @@ show_result() {
 
 # Fonction pour configurer le ventilateur
 configure_fan() {
-    local mode="$1"  # CONFIGURATION ou PRODUCTION
+    local mode="$1"  # PRODUCTION uniquement
     local temp1="$2"
     local temp2="$3"
     
@@ -102,6 +104,107 @@ configure_fan() {
     fi
 }
 
+# Fonction pour personnaliser l'interface (version simplifiée)
+customize_desktop() {
+    # Vérifier si on est dans un environnement graphique
+    if [ ! -d "/etc/xdg/lxsession" ]; then
+        log_message "AVERTISSEMENT: Environnement graphique non détecté" false
+        show_result "AVERTISSEMENT: Environnement graphique non détecté, personnalisation ignorée"
+        return 1
+    fi
+    
+    # Déterminer l'utilisateur principal (essayer M4X d'abord)
+    local current_user="M4X"
+    local user_home="/home/$current_user"
+    
+    # Vérifier si le répertoire de l'utilisateur existe
+    if [ ! -d "$user_home" ]; then
+        # Essayer de détecter automatiquement l'utilisateur principal
+        current_user=$(ls -la /home | grep -v "^d.* \.$" | grep "^d" | head -1 | awk '{print $3}')
+        user_home="/home/$current_user"
+        
+        # Si toujours pas trouvé, utiliser l'utilisateur exécutant le script
+        if [ ! -d "$user_home" ] || [ "$current_user" = "root" ]; then
+            current_user=$(who am i | awk '{print $1}')
+            user_home="/home/$current_user"
+            
+            # Dernier recours: utiliser SUDO_USER s'il est défini
+            if [ ! -d "$user_home" ] && [ -n "$SUDO_USER" ]; then
+                current_user="$SUDO_USER"
+                user_home="/home/$current_user"
+            fi
+        fi
+    fi
+    
+    # Vérifier encore une fois si le répertoire existe
+    if [ ! -d "$user_home" ]; then
+        log_message "ERREUR: Impossible de trouver un répertoire utilisateur valide" false
+        show_result "ERREUR: Impossible de configurer l'interface. Aucun utilisateur trouvé."
+        return 1
+    fi
+    
+    log_message "Personnalisation de l'interface pour l'utilisateur: $current_user" false
+    
+    # 1. Copier l'image de fond d'écran
+    echo "Installation du fond d'écran personnalisé :"
+    if [ -f "$BG_IMAGE_SOURCE" ]; then
+        # Créer le dossier de destination s'il n'existe pas
+        mkdir -p "$BG_IMAGE_DEST"
+        # Toujours remplacer l'image existante
+        cp -f "$BG_IMAGE_SOURCE" "$BG_IMAGE_DEST/bg.jpg"
+        chmod 644 "$BG_IMAGE_DEST/bg.jpg"
+        show_result "Fond d'écran installé avec succès"
+    else
+        log_message "AVERTISSEMENT: Image de fond d'écran non trouvée: $BG_IMAGE_SOURCE" false
+        show_result "AVERTISSEMENT: Image de fond d'écran non trouvée"
+    fi
+    
+    # 2. Désactiver l'affichage de la corbeille
+    echo "Désactivation de l'affichage de la corbeille :"
+    
+    # Assurer que les dossiers de configuration existent
+    mkdir -p "$user_home/.config/pcmanfm/LXDE-pi"
+    
+    # Configurer le fond d'écran et masquer la corbeille
+    # Vérifier si le fichier de configuration existe déjà
+    if [ -f "$user_home/.config/pcmanfm/LXDE-pi/desktop-items-0.conf" ]; then
+        # Modifier le fichier existant pour changer uniquement wallpaper et show_trash
+        sed -i "s|wallpaper=.*|wallpaper=$BG_IMAGE_DEST/bg.jpg|g" "$user_home/.config/pcmanfm/LXDE-pi/desktop-items-0.conf"
+        sed -i "s|show_trash=.*|show_trash=0|g" "$user_home/.config/pcmanfm/LXDE-pi/desktop-items-0.conf"
+    else
+        # Créer un nouveau fichier de configuration
+        cat > "$user_home/.config/pcmanfm/LXDE-pi/desktop-items-0.conf" << EOF
+[*]
+wallpaper_mode=stretch
+wallpaper_common=1
+wallpaper=$BG_IMAGE_DEST/bg.jpg
+desktop_bg=#000000
+desktop_fg=#ffffff
+desktop_shadow=#000000
+desktop_font=Sans 12
+show_wm_menu=0
+sort=mtime;ascending;
+show_documents=0
+show_trash=0
+show_mounts=0
+EOF
+    fi
+    
+    # S'assurer que les fichiers appartiennent à l'utilisateur
+    chown -R $current_user:$current_user "$user_home/.config"
+    
+    # Appliquer également les configurations pour les nouveaux utilisateurs
+    if [ -d "/etc/xdg" ]; then
+        # Créer le dossier si nécessaire
+        mkdir -p "/etc/xdg/pcmanfm/LXDE-pi"
+        
+        # Copier la configuration
+        cp "$user_home/.config/pcmanfm/LXDE-pi/desktop-items-0.conf" "/etc/xdg/pcmanfm/LXDE-pi/"
+    fi
+    
+    show_result "Personnalisation de l'interface réussie pour $current_user"
+}
+
 # Réinitialiser le fichier de log
 echo "--- Nouvelle session: $(date) ---" > "$LOG_FILE"
 
@@ -109,7 +212,7 @@ echo "--- Nouvelle session: $(date) ---" > "$LOG_FILE"
 section_header "DÉMARRAGE DE LA MISE À JOUR DU RASPBERRY PI"
 
 echo "Configuration du système de refroidissement :"
-configure_fan "CONFIGURATION" "0" "0"
+configure_fan "PRODUCTION" "60" "60"
 sleep 2
 
 # CONNECTIVITÉ RÉSEAU
@@ -200,23 +303,24 @@ UPDATE_LOG="$LOG_DIR/apt_update.log"
 UPGRADE_LOG="$LOG_DIR/apt_upgrade.log"
 CLEAN_LOG="$LOG_DIR/apt_clean.log"
 
-echo "Mise à jour des dépôts logiciels :"
+echo "Téléchargement des informations sur les dépôts :"
 apt-get update -y >> "$UPDATE_LOG" 2>&1
 update_status=$?
 
 if [ $update_status -ne 0 ]; then
-    show_result "ERREUR: Échec de la mise à jour des dépôts"
+    show_result "ERREUR: Échec du téléchargement des informations sur les dépôts"
 else
-    show_result "Mise à jour des dépôts terminée"
+    show_result "Informations sur les dépôts téléchargées avec succès"
     
+    echo "Installation des mises à jour système :"
     echo "Cette opération peut prendre plusieurs minutes..."
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y >> "$UPGRADE_LOG" 2>&1
     upgrade_status=$?
     
     if [ $upgrade_status -ne 0 ]; then
-        show_result "ERREUR: Échec de la mise à niveau des paquets"
+        show_result "ERREUR: Échec de l'installation des mises à jour"
     else
-        show_result "Mise à niveau des paquets terminée"
+        show_result "Installation des mises à jour système terminée"
         
         echo "Nettoyage du système :"
         {
@@ -227,13 +331,12 @@ else
     fi
 fi
 
-# FINALISATION
-section_header "FINALISATION"
+# PERSONNALISATION DE L'INTERFACE
+section_header "PERSONNALISATION DE L'INTERFACE"
+customize_desktop
 
-echo "Restauration du système de refroidissement :"
-configure_fan "PRODUCTION" "60" "60"
-
-echo "Déconnexion du réseau WiFi..."
+# Déconnexion du WiFi
+echo "Déconnexion du réseau WiFi :"
 nmcli connection delete "$WIFI_SSID" > /dev/null 2>&1
 show_result "Déconnecté du réseau WiFi"
 

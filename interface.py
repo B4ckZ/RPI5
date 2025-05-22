@@ -9,6 +9,7 @@ COLORS = {
     "nord0": "#2E3440",  # Fond sombre
     "nord1": "#3B4252",  # Fond moins sombre
     "nord3": "#4C566A",  # Bordure sélection
+    "nord4": "#D8DEE9",  # Texte tertiaire
     "nord6": "#ECEFF4",  # Texte
     "nord10": "#5E81AC", # Bouton Installer
     "nord11": "#BF616A", # Rouge / Erreur / Désinstaller
@@ -19,16 +20,18 @@ COLORS = {
 class MaxLinkApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("MaxLink Config")
-        self.root.geometry("1000x550")
+        
+        # Titre standard dans la barre de titre de la fenêtre
+        self.root.title("MaxLink™ Admin Panel V1.0 - © 2025 WERIT. Tous droits réservés. - Usage non autorisé strictement interdit.")
+        self.root.geometry("1100x600")  # Augmenté légèrement pour accommoder le titre
         self.root.configure(bg=COLORS["nord0"])
         
         # Chemins et initialisation
         self.base_path = os.path.dirname(os.path.abspath(__file__))
         self.services = [
             {"id": "update_rpi", "name": "Update RPI", "status": "active"},
-            {"id": "mqtt", "name": "MQTT BKR", "status": "active"},
             {"id": "nginx", "name": "NginX Web", "status": "active"},
+            {"id": "mqtt", "name": "MQTT BKR", "status": "active"},
             {"id": "network", "name": "Network AP", "status": "active"}
         ]
         self.selected_service = self.services[0]
@@ -176,7 +179,7 @@ class MaxLinkApp:
             script_path = f"scripts/{service_id}_{action}.sh"
         
         # Afficher l'action dans la console
-        self.update_console(f"\n{'='*50}\nExécution: {service['name']} - {action.upper()}\n{'='*50}\n")
+        self.update_console(f"\n{'='*90}\nExécution: {service['name']} - {action.upper()}\n{'='*90}\n")
         
         # Exécuter le script en arrière-plan
         threading.Thread(target=self.execute_script, args=(script_path, service, action), daemon=True).start()
