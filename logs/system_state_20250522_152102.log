@@ -1,0 +1,99 @@
+=== ÉTAT SYSTÈME MAXLINK ===
+Date: Thu 22 May 15:21:02 CEST 2025
+Script: update_install
+Utilisateur: max
+PWD: /media/max/MAXLINK
+
+=== SERVICES RÉSEAU ===
+● NetworkManager.service - Network Manager
+     Loaded: loaded (/lib/systemd/system/NetworkManager.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2025-05-22 15:13:23 CEST; 7min ago
+       Docs: man:NetworkManager(8)
+   Main PID: 699 (NetworkManager)
+      Tasks: 3 (limit: 9568)
+        CPU: 133ms
+     CGroup: /system.slice/NetworkManager.service
+             └─699 /usr/sbin/NetworkManager --no-daemon
+
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.6307] modem-manager: ModemManager not available
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.6402] modem-manager: ModemManager now available
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.7407] device (wlan0): supplicant interface state: internal-starting -> disconnected
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.7408] Wi-Fi P2P device controlled by interface wlan0 created
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.7410] manager: (p2p-dev-wlan0): new 802.11 Wi-Fi P2P device (/org/freedesktop/NetworkManager/Devices/4)
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.7412] device (p2p-dev-wlan0): state change: unmanaged -> unavailable (reason 'managed', sys-iface-state: 'external')
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.7415] device (wlan0): state change: unavailable -> disconnected (reason 'supplicant-available', sys-iface-state: 'managed')
+May 22 15:13:23 raspberrypi NetworkManager[699]: <info>  [1747919603.7419] device (p2p-dev-wlan0): state change: unavailable -> disconnected (reason 'none', sys-iface-state: 'managed')
+May 22 15:13:25 raspberrypi NetworkManager[699]: <info>  [1747919605.9528] agent-manager: agent[d1a547df01e44bcb,:1.31/org.freedesktop.nm-applet/1000]: agent registered
+May 22 15:13:30 raspberrypi NetworkManager[699]: <info>  [1747919610.5943] manager: startup complete
+
+● wpa_supplicant.service - WPA supplicant
+     Loaded: loaded (/lib/systemd/system/wpa_supplicant.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2025-05-22 15:13:23 CEST; 7min ago
+   Main PID: 704 (wpa_supplicant)
+      Tasks: 1 (limit: 9568)
+        CPU: 35ms
+     CGroup: /system.slice/wpa_supplicant.service
+             └─704 /sbin/wpa_supplicant -u -s -O "DIR=/run/wpa_supplicant GROUP=netdev"
+
+May 22 15:13:23 raspberrypi systemd[1]: Starting wpa_supplicant.service - WPA supplicant...
+May 22 15:13:23 raspberrypi wpa_supplicant[704]: Successfully initialized wpa_supplicant
+May 22 15:13:23 raspberrypi systemd[1]: Started wpa_supplicant.service - WPA supplicant.
+May 22 15:13:23 raspberrypi wpa_supplicant[704]: nl80211: kernel reports: Registration to specific type not supported
+
+=== INTERFACES RÉSEAU ===
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
+    link/ether 2c:cf:67:43:b5:e2 brd ff:ff:ff:ff:ff:ff
+3: wlan0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
+    link/ether 2c:cf:67:43:b5:e3 brd ff:ff:ff:ff:ff:ff
+
+=== CONNEXIONS NETWORKMANAGER ===
+NAME                UUID                                  TYPE      DEVICE 
+lo                  0c091758-cbeb-4416-bfd1-b653f0c4f6a9  loopback  lo     
+preconfigured       7c2a29cc-7ffa-44e5-ba16-d85a84aba70f  wifi      --     
+Wired connection 1  c3d8b2cc-a1a8-356b-b7da-47f9df38929f  ethernet  --     
+
+=== CONNEXIONS ACTIVES ===
+NAME  UUID                                  TYPE      DEVICE 
+lo    0c091758-cbeb-4416-bfd1-b653f0c4f6a9  loopback  lo     
+
+=== RÉSEAUX WIFI ===
+IN-USE  BSSID              SSID          MODE   CHAN  RATE        SIGNAL  BARS  SECURITY  
+        26:61:B4:0A:A5:08  --            Infra  1     130 Mbit/s  100     ▂▄▆█  WPA2 WPA3 
+        1C:61:B4:0A:A5:08  WERIT INVITE  Infra  1     130 Mbit/s  100     ▂▄▆█  WPA1 WPA2 
+        22:61:B4:0A:A5:08  WERIT W       Infra  1     130 Mbit/s  100     ▂▄▆█  WPA1 WPA2 
+        4A:94:4D:D2:48:13  Max           Infra  6     135 Mbit/s  92      ▂▄▆█  WPA2 WPA3 
+        1C:61:B4:0A:A5:09  WERIT INVITE  Infra  40    270 Mbit/s  87      ▂▄▆█  WPA1 WPA2 
+        22:61:B4:0A:A5:09  --            Infra  40    270 Mbit/s  87      ▂▄▆█  WPA2      
+        22:61:B4:0A:8B:F7  --            Infra  44    270 Mbit/s  35      ▂▄__  WPA2      
+        1C:61:B4:0A:8B:F7  WERIT INVITE  Infra  44    270 Mbit/s  32      ▂▄__  WPA1 WPA2 
+        22:61:B4:0A:93:8D  --            Infra  36    270 Mbit/s  25      ▂___  WPA2      
+        1C:61:B4:0A:93:8D  WERIT INVITE  Infra  36    270 Mbit/s  24      ▂___  WPA1 WPA2 
+        1C:61:B4:0A:A5:55  WERIT INVITE  Infra  52    270 Mbit/s  24      ▂___  WPA1 WPA2 
+        22:61:B4:0A:A5:55  --            Infra  52    270 Mbit/s  22      ▂___  WPA2      
+
+=== PROCESSUS RÉSEAU ===
+root         699  0.0  0.2 263552 18000 ?        Ssl  15:13   0:00 /usr/sbin/NetworkManager --no-daemon
+root         704  0.0  0.1  17632  9984 ?        Ss   15:13   0:00 /sbin/wpa_supplicant -u -s -O DIR=/run/wpa_supplicant GROUP=netdev
+
+=== UTILISATION MÉMOIRE ===
+               total        used        free      shared  buff/cache   available
+Mem:           7.9Gi       594Mi       7.0Gi        57Mi       464Mi       7.3Gi
+Swap:          511Mi          0B       511Mi
+
+=== UTILISATION DISQUE ===
+Filesystem      Size  Used Avail Use% Mounted on
+udev            3.9G     0  3.9G   0% /dev
+tmpfs           806M   15M  792M   2% /run
+/dev/nvme0n1p2  458G  4.9G  430G   2% /
+tmpfs           4.0G  688K  4.0G   1% /dev/shm
+tmpfs           5.0M   48K  5.0M   1% /run/lock
+/dev/nvme0n1p1  510M   77M  434M  16% /boot/firmware
+tmpfs           806M  176K  806M   1% /run/user/1000
+/dev/sda1        15G  216K   15G   1% /media/max/MAXLINK
+

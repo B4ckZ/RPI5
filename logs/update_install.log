@@ -1,0 +1,61 @@
+
+================================================================================
+DÉMARRAGE: update_install
+Description: Mise à jour système et personnalisation Raspberry Pi
+Date: Thu 22 May 15:21:02 CEST 2025
+Utilisateur: max
+PID: 1491
+================================================================================
+
+[2025-05-22 15:21:02.457] [INFO] [update_install] Script update_install démarré
+[2025-05-22 15:21:05.473] [INFO] [update_install] État système capturé: /media/max/MAXLINK/logs/system_state_20250522_152102.log
+[2025-05-22 15:21:05.684] [INFO] [update_install] === SECTION: DÉMARRAGE DE LA MISE À JOUR DU RASPBERRY PI ===
+[2025-05-22 15:21:06.896] [INFO] [update_install] Configuration du système de refroidissement
+[2025-05-22 15:21:07.111] [INFO] [update_install] Sauvegarde de config.txt créée
+[2025-05-22 15:21:07.320] [INFO] [update_install] Ajout des nouveaux paramètres de refroidissement
+[2025-05-22 15:21:07.532] [ERROR] [update_install] Configuration du refroidissement échouée
+[2025-05-22 15:21:07.847] [ERROR] [update_install] ERREUR: Configuration du refroidissement échouée
+[2025-05-22 15:21:10.662] [INFO] [update_install] === SECTION: CONNECTIVITÉ RÉSEAU ===
+[2025-05-22 15:21:11.876] [INFO] [update_install] Recherche et connexion au réseau WiFi Max
+[2025-05-22 15:21:12.087] [INFO] [update_install] Connexion au WiFi
+[2025-05-22 15:21:18.070] [INFO] [update_install] Connecté au réseau Max
+[2025-05-22 15:21:18.779] [INFO] [update_install] Test de la connectivité Internet
+[2025-05-22 15:21:24.110] [INFO] [update_install] Connexion stable avec 45.1 ms de ping
+[2025-05-22 15:21:24.820] [INFO] [update_install] Connectivité Internet confirmée: 45.1 ms
+[2025-05-22 15:21:25.032] [INFO] [update_install] === SECTION: VÉRIFICATION SYSTÈME ===
+[2025-05-22 15:21:26.244] [INFO] [update_install] Vérification de l'horloge système
+[2025-05-22 15:21:26.669] [INFO] [update_install] Horloge interne synchronisée
+[2025-05-22 15:21:27.831] [INFO] [update_install] Horloge déjà synchronisée
+[2025-05-22 15:21:28.046] [INFO] [update_install] === SECTION: MISE À JOUR DU SYSTÈME ===
+[2025-05-22 15:21:29.254] [INFO] [update_install] Téléchargement des informations sur les dépôts
+[2025-05-22 15:21:29.465] [INFO] [update_install] Mise à jour des dépôts
+[2025-05-22 15:21:29.715] [ERROR] [update_install] Commande échouée (code 100): apt-get update -y
+[2025-05-22 15:21:30.030] [ERROR] [update_install] Sortie erreur: E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)
+E: Unable to lock directory /var/lib/apt/lists/
+W: Problem unlinking the file /var/cache/apt/pkgcache.bin - RemoveCaches (13: Permission denied)
+W: Problem unlinking the file /var/cache/apt/srcpkgcache.bin - RemoveCaches (13: Permission denied)
+[2025-05-22 15:21:30.345] [ERROR] [update_install] Échec du téléchargement des informations sur les dépôts
+[2025-05-22 15:21:30.657] [ERROR] [update_install] ERREUR: Mise à jour des dépôts échouée
+[2025-05-22 15:21:31.470] [INFO] [update_install] Installation des mises à jour système
+[2025-05-22 15:21:31.677] [INFO] [update_install] Installation des mises à jour système
+[2025-05-22 15:21:31.926] [ERROR] [update_install] Commande échouée (code 100): DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+[2025-05-22 15:21:32.241] [ERROR] [update_install] Sortie erreur: E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)
+E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?
+[2025-05-22 15:21:32.553] [ERROR] [update_install] Échec de l'installation des mises à jour
+[2025-05-22 15:21:32.869] [ERROR] [update_install] ERREUR: Installation des mises à jour échouée
+[2025-05-22 15:21:33.683] [INFO] [update_install] === SECTION: PERSONNALISATION DE L'INTERFACE ===
+[2025-05-22 15:21:34.899] [INFO] [update_install] Personnalisation de l'interface pour l'utilisateur: max
+[2025-05-22 15:21:35.109] [WARN] [update_install] Image de fond d'écran non trouvée: /media/max/MAXLINK/assets/bg.jpg
+[2025-05-22 15:21:35.317] [WARN] [update_install] AVERTISSEMENT: Image de fond d'écran non trouvée
+[2025-05-22 15:21:36.041] [INFO] [update_install] Personnalisation de l'interface réussie pour max
+[2025-05-22 15:21:36.754] [INFO] [update_install] Interface personnalisée pour max
+[2025-05-22 15:21:36.967] [INFO] [update_install] === SECTION: FINALISATION ===
+[2025-05-22 15:21:38.186] [INFO] [update_install] Déconnexion du réseau WiFi
+[2025-05-22 15:21:38.397] [INFO] [update_install] Déconnexion du WiFi
+[2025-05-22 15:21:38.634] [INFO] [update_install] Déconnecté du réseau WiFi
+[2025-05-22 15:21:39.347] [INFO] [update_install] === SECTION: MISE À JOUR TERMINÉE AVEC SUCCÈS ===
+[2025-05-22 15:21:40.558] [INFO] [update_install] Mise à jour du système terminée avec succès
+[2025-05-22 15:21:40.766] [INFO] [update_install] Système mis à jour avec succès !
+[2025-05-22 15:21:41.474] [INFO] [update_install] Redémarrage programmé dans 10 secondes
+[2025-05-22 15:21:51.693] [INFO] [update_install] Redémarrage du système
+[2025-05-22 15:21:51.957] [INFO] [update_install] Script update_install terminé avec le code 0

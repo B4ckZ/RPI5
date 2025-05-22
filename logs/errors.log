@@ -1,0 +1,14 @@
+[2025-05-22 15:21:07.532] [ERROR] [update_install] Configuration du refroidissement échouée
+[2025-05-22 15:21:07.847] [ERROR] [update_install] ERREUR: Configuration du refroidissement échouée
+[2025-05-22 15:21:29.715] [ERROR] [update_install] Commande échouée (code 100): apt-get update -y
+[2025-05-22 15:21:30.030] [ERROR] [update_install] Sortie erreur: E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)
+E: Unable to lock directory /var/lib/apt/lists/
+W: Problem unlinking the file /var/cache/apt/pkgcache.bin - RemoveCaches (13: Permission denied)
+W: Problem unlinking the file /var/cache/apt/srcpkgcache.bin - RemoveCaches (13: Permission denied)
+[2025-05-22 15:21:30.345] [ERROR] [update_install] Échec du téléchargement des informations sur les dépôts
+[2025-05-22 15:21:30.657] [ERROR] [update_install] ERREUR: Mise à jour des dépôts échouée
+[2025-05-22 15:21:31.926] [ERROR] [update_install] Commande échouée (code 100): DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+[2025-05-22 15:21:32.241] [ERROR] [update_install] Sortie erreur: E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)
+E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?
+[2025-05-22 15:21:32.553] [ERROR] [update_install] Échec de l'installation des mises à jour
+[2025-05-22 15:21:32.869] [ERROR] [update_install] ERREUR: Installation des mises à jour échouée
