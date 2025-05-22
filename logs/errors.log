@@ -1,14 +1,15 @@
-[2025-05-22 15:21:07.532] [ERROR] [update_install] Configuration du refroidissement échouée
-[2025-05-22 15:21:07.847] [ERROR] [update_install] ERREUR: Configuration du refroidissement échouée
-[2025-05-22 15:21:29.715] [ERROR] [update_install] Commande échouée (code 100): apt-get update -y
-[2025-05-22 15:21:30.030] [ERROR] [update_install] Sortie erreur: E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)
+[2025-05-13 02:20:34.724] [ERROR] [update_install] Commande échouée (code 100): apt-get update --allow-releaseinfo-change
+[2025-05-13 02:20:35.037] [ERROR] [update_install] Sortie erreur: E: Release file for http://deb.debian.org/debian/dists/bookworm/InRelease is not valid yet (invalid for another 4d 8h 52min 21s). Updates for this repository will not be applied.
+E: Release file for http://archive.raspberrypi.com/debian/dists/bookworm/InRelease is not valid yet (invalid for another 9d 15h 4min 15s). Updates for this repository will not be applied.
+E: Release file for http://deb.debian.org/debian-security/dists/bookworm-security/InRelease is not valid yet (invalid for another 9d 14h 15min 39s). Updates for this repository will not be applied.
+E: Release file for http://deb.debian.org/debian/dists/bookworm-updates/InRelease is not valid yet (invalid for another 9d 13h 51min 10s). Updates for this repository will not be applied.
+[2025-05-22 23:11:30.127] [ERROR] [update_install] Commande échouée (code 100): apt-get update -y
+[2025-05-22 23:11:30.441] [ERROR] [update_install] Sortie erreur: E: Could not get lock /var/lib/apt/lists/lock. It is held by process 1772 (packagekitd)
 E: Unable to lock directory /var/lib/apt/lists/
-W: Problem unlinking the file /var/cache/apt/pkgcache.bin - RemoveCaches (13: Permission denied)
-W: Problem unlinking the file /var/cache/apt/srcpkgcache.bin - RemoveCaches (13: Permission denied)
-[2025-05-22 15:21:30.345] [ERROR] [update_install] Échec du téléchargement des informations sur les dépôts
-[2025-05-22 15:21:30.657] [ERROR] [update_install] ERREUR: Mise à jour des dépôts échouée
-[2025-05-22 15:21:31.926] [ERROR] [update_install] Commande échouée (code 100): DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-[2025-05-22 15:21:32.241] [ERROR] [update_install] Sortie erreur: E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)
-E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?
-[2025-05-22 15:21:32.553] [ERROR] [update_install] Échec de l'installation des mises à jour
-[2025-05-22 15:21:32.869] [ERROR] [update_install] ERREUR: Installation des mises à jour échouée
+[2025-05-22 23:14:29.774] [ERROR] [update_install] Commande échouée (code 100): apt-get update -y
+[2025-05-22 23:14:30.089] [ERROR] [update_install] Sortie erreur: E: Failed to stat /var/lib/apt/lists/partial/deb.debian.org_debian_dists_bookworm-updates_InRelease - pkgAcqTransactionItem::TransactionState-stat (2: No such file or directory)
+E: Failed to stat /var/lib/apt/lists/partial/archive.raspberrypi.com_debian_dists_bookworm_InRelease - pkgAcqTransactionItem::TransactionState-stat (2: No such file or directory)
+E: Failed to stat /var/lib/apt/lists/partial/archive.raspberrypi.com_debian_dists_bookworm_main_binary-armhf_Packages - pkgAcqTransactionItem::TransactionState-stat (2: No such file or directory)
+E: Failed to stat /var/lib/apt/lists/partial/archive.raspberrypi.com_debian_dists_bookworm_main_binary-arm64_Packages - pkgAcqTransactionItem::TransactionState-stat (2: No such file or directory)
+[2025-05-22 23:14:30.404] [ERROR] [update_install] Échec définitif du téléchargement des dépôts
+[2025-05-22 23:14:30.716] [ERROR] [update_install] ERREUR: Mise à jour des dépôts échouée

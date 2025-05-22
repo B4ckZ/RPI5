@@ -28,6 +28,9 @@ class MaxLinkApp:
         self.root.geometry("1200x700")
         self.root.configure(bg=COLORS["nord0"])
         
+        # NOUVEAU : Vérifier si on est en mode root
+        self.root_mode = self.check_root_mode()
+        
         # Chemins et initialisation
         self.base_path = os.path.dirname(os.path.abspath(__file__))
         self.services = [
@@ -40,6 +43,36 @@ class MaxLinkApp:
         
         # Créer l'interface
         self.create_interface()
+        
+    def check_root_mode(self):
+        """Vérifier si l'interface est lancée avec les privilèges root"""
+        # Vérifier le fichier de session
+        session_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.maxlink_session')
+        if os.path.exists(session_file):
+            try:
+                with open(session_file, 'r') as f:
+                    content = f.read()
+                    if 'MAXLINK_ROOT_MODE=1' in content:
+                        return True
+            except:
+                pass
+        
+        # Vérifier si on est root (compatible Windows/Linux)
+        try:
+            # Sur Linux/Unix
+            if hasattr(os, 'geteuid'):
+                return os.geteuid() == 0
+            # Sur Windows - vérifier si on est administrateur
+            else:
+                import ctypes
+                try:
+                    return ctypes.windll.shell32.IsUserAnAdmin() != 0
+                except:
+                    # Si on ne peut pas vérifier, considérer comme non-privilégié
+                    return False
+        except:
+            # En cas d'erreur, mode développement sur Windows
+            return True  # Pour les tests sur Windows
         
     def create_interface(self):
         # Conteneur principal
@@ -63,6 +96,26 @@ class MaxLinkApp:
             fg=COLORS["nord6"]
         )
         services_title.pack(pady=(0, 15))
+        
+        # NOUVEAU : Indicateur de mode privilégié adapté au système
+        import platform
+        is_windows = (platform.system() == "Windows")
+        
+        if is_windows:
+            privilege_text = "Mode: Test Windows"
+            privilege_color = COLORS["nord15"]
+        else:
+            privilege_text = "Mode Privilégié: ◦ ACTIF" if self.root_mode else "Mode Privilégié: ⦿ INACTIF"
+            privilege_color = COLORS["nord14"] if self.root_mode else COLORS["nord11"]
+        
+        privilege_label = tk.Label(
+            services_frame,
+            text=privilege_text,
+            font=("Arial", 10, "bold"),
+            bg=COLORS["nord1"],
+            fg=privilege_color
+        )
+        privilege_label.pack(pady=(0, 10))
         
         # Créer les éléments de service
         for service in self.services:
@@ -102,24 +155,38 @@ class MaxLinkApp:
         self.console.pack(fill="both", expand=True)
         
         # Message d'accueil dans la console
-        welcome_msg = """MaxLink Admin Panel V2.0 - Console Prête
+        # Détecter le système d'exploitation
+        import platform
+        system_name = platform.system()
+        is_windows = (system_name == "Windows")
+        
+        # Message adapté mais simplifié
+        if is_windows:
+            status_text = "Mode Windows (Test uniquement)"
+            status_color = COLORS["nord15"]
+        else:
+            status_text = f"Mode privilégié: {'◦ ACTIF' if self.root_mode else '⦿ INACTIF'}"
+            status_color = COLORS["nord14"] if self.root_mode else COLORS["nord11"]
+        
+        welcome_msg = f"""MaxLink Admin Panel V2.0 - Console Prête
 
-Instructions:
+« État du système »
+• {status_text}
+• Répertoire: {self.base_path}
+• Système: {system_name}
+• Utilisateur: {os.getenv('USER', os.getenv('USERNAME', 'unknown'))}
+
+« Instructions »
 1. Sélectionnez un service dans la liste
 2. Choisissez une action (Installer/Démarrer/Tester/Désinstaller)
 3. Suivez l'exécution en temps réel dans cette console
 
-Logging avancé:
-• Tous les scripts génèrent des logs détaillés
+« Fonctionnalités »
+• Logging avancé automatique
 • Snapshots système automatiques
-• Historique complet des opérations
-
-Version simplifiée:
-• Scripts optimisés pour NetworkManager
-• Gestion intelligente des conflits
 • Redémarrage automatique après chaque opération
 
-Prêt pour l'action !
+➼ Prêt pour l'action !
 
 """
         self.console.insert(tk.END, welcome_msg)
@@ -133,7 +200,7 @@ Prêt pour l'action !
         frame = tk.Frame(
             parent,
             bg=COLORS["nord1"],
-            highlightthickness=3,  # Augmenté de 2 à 3
+            highlightthickness=3,
             padx=10,
             pady=10
         )
@@ -204,7 +271,7 @@ Prêt pour l'action !
         for service in self.services:
             is_selected = service == self.selected_service
             # Couleur plus visible pour la sélection
-            border_color = COLORS["nord8"] if is_selected else COLORS["nord1"]  # Changé de nord3 à nord8
+            border_color = COLORS["nord8"] if is_selected else COLORS["nord1"]
             service["frame"].config(highlightbackground=border_color, highlightcolor=border_color)
             
     def run_action(self, action):
@@ -214,11 +281,38 @@ Prêt pour l'action !
         service = self.selected_service
         service_id = service["id"]
         
+        # Détecter le système
+        import platform
+        is_windows = (platform.system() == "Windows")
+        
+        # Sur Windows : juste vérifier que l'interface s'ouvre (pas d'exécution)
+        if is_windows:
+            messagebox.showinfo(
+                "Mode Test Windows",
+                f"Interface testée avec succès !\n\n"
+                f"Action simulée : {action.upper()}\n"
+                f"Service : {service['name']}\n\n"
+                f"Pour utilisation réelle :\n"
+                f"• Transférez sur Raspberry Pi Linux\n"
+                f"• Lancez avec : sudo bash config.sh"
+            )
+            return
+            
+        # Sur Linux : vérifier le mode privilégié avant d'exécuter
+        if not self.root_mode:
+            messagebox.showerror(
+                "Privilèges insuffisants",
+                "Cette interface doit être lancée avec des privilèges root.\n\n"
+                "Fermez cette fenêtre et relancez avec :\n"
+                "sudo bash config.sh"
+            )
+            return
+            
         # Confirmation spéciale pour les désinstallations
         if action == "uninstall":
             result = messagebox.askyesno(
                 "Confirmation de désinstallation",
-                f"⚠️ ATTENTION ⚠️\n\n"
+                f"⦿ ATTENTION ⦿\n\n"
                 f"Vous êtes sur le point de désinstaller complètement :\n"
                 f"• {service['name']}\n\n"
                 f"Cette opération :\n"
@@ -239,12 +333,13 @@ Prêt pour l'action !
         
         # Afficher l'action dans la console
         action_header = f"""
-{'='*80}
+{"="*80}
 EXÉCUTION: {service['name']} - {action.upper()}
-{'='*80}
+{"="*80}
 Script: {script_path}
 Logs détaillés: logs/{service_id}_{action}.log
-{'='*80}
+Mode privilégié: ◦ ACTIF
+{"="*80}
 
 """
         self.update_console(action_header)
@@ -257,7 +352,7 @@ Logs détaillés: logs/{service_id}_{action}.log
     
     def execute_script(self, script_path, service, action):
         try:
-            # Construire le chemin complet du script relatif à l'emplacement de la clé USB
+            # Construire le chemin complet du script
             full_script_path = os.path.join(self.base_path, script_path)
             
             # Vérifier si le script existe
@@ -266,10 +361,22 @@ Logs détaillés: logs/{service_id}_{action}.log
                 self.update_console(f"Chemin recherché: {full_script_path}\n\n")
                 return
                 
-            # Exécuter le script (déjà avec sudo car le programme est lancé avec sudo)
+            # MODIFICATION CRITIQUE : Exécuter directement sans sudo
+            # Car on est déjà root grâce au lancement avec sudo bash config.sh
             cmd = f"bash {full_script_path}"
             
-            self.update_console(f"Exécution de la commande: {cmd}\n\n")
+            self.update_console(f"Exécution de la commande: {cmd}\n")
+            
+            # Afficher les informations de privilèges selon le système
+            try:
+                if hasattr(os, 'getuid'):
+                    # Linux/Unix
+                    self.update_console(f"Mode privilégié: ◦ ACTIF (UID={os.getuid()})\n\n")
+                else:
+                    # Windows
+                    self.update_console(f"Mode privilégié: ◦ ACTIF (Windows)\n\n")
+            except:
+                self.update_console(f"Mode privilégié: ◦ ACTIF\n\n")
             
             process = subprocess.Popen(
                 cmd,
@@ -277,7 +384,9 @@ Logs détaillés: logs/{service_id}_{action}.log
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, 
                 text=True, 
-                bufsize=1
+                bufsize=1,
+                # NOUVEAU : Préserver l'environnement root
+                env=os.environ.copy()
             )
             
             # Afficher la sortie en temps réel
@@ -294,11 +403,11 @@ Logs détaillés: logs/{service_id}_{action}.log
             
             # Message de fin avec statut
             end_message = f"""
-{'='*80}
+{"="*80}
 TERMINÉ: {service['name']} - {action.upper()}
 Code de sortie: {return_code}
 Logs complets: logs/{service['id']}_{action}.log
-{'='*80}
+{"="*80}
 
 """
             self.update_console(end_message)
@@ -312,7 +421,7 @@ Logs complets: logs/{service['id']}_{action}.log
                     service["status"] = "inactive"
                     self.update_status_indicator(service, False)
             else:
-                self.update_console(f"Le script s'est terminé avec des erreurs (code {return_code})\n")
+                self.update_console(f"⦿ Le script s'est terminé avec des erreurs (code {return_code})\n")
                 self.update_console("Consultez les logs pour plus de détails.\n\n")
             
         except Exception as e:
